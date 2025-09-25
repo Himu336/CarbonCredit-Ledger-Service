@@ -13,3 +13,19 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Record {
+  id           Int      @id @default(autoincrement())
+  recordId     String   @unique
+  projectName  String
+  registry     String
+  vintage      Int
+  quantity     Int
+  serialNumber String?  @unique
+  createdAt    DateTime @default(now())
+  
+  // Indexes for faster queries on frequently filtered fields
+  @@index([projectName])
+  @@index([registry])
+  @@index([vintage])
+}
