@@ -24,8 +24,25 @@ model Record {
   serialNumber String?  @unique
   createdAt    DateTime @default(now())
   
+  // Relation to Event
+  events       Event[]  // a record can have multiple events
+  
   // Indexes for faster queries on frequently filtered fields
   @@index([projectName])
   @@index([registry])
   @@index([vintage])
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  eventId     String   @unique
+  recordId    String
+  type        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  // Relation to Record
+  record      Record   @relation(fields: [recordId], references: [recordId])
+
+  @@index([recordId]) // optimization for querying by record
 }
