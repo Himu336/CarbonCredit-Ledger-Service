@@ -2,6 +2,7 @@ const RecordRepository = require('../repositories/record-repository');
 const AppError = require('../utils/errors/app-error');
 const { StatusCodes } = require('http-status-codes');
 
+const { createEvent } = require('./event-service');
 const { GenerateRecordId } = require('../utils/common');
 
 const recordRepository = new RecordRepository();
@@ -28,7 +29,14 @@ async function createRecord(data) {
             registry: data.registry,
             vintage: data.vintage,
             quantity: data.quantity,
-            serialNumber: data.serialNumber
+            serialNumber: data.serialNumber,
+        });
+
+        // Automatically generate a CREATED event for this record
+        await createEvent({
+            recordId: newRecord.recordId,
+            type: 'CREATED',
+            description: 'Record created in the system',
         });
 
         return newRecord;
