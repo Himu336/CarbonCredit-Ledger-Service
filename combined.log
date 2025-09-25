@@ -1,2 +1,11 @@
 2025-09-25 10:21:18: info: Successfully started the server
 2025-09-25 10:22:20: info: Successfully started the server
+2025-09-25 10:52:20: error: Cannot read properties of undefined (reading '$connect')
+2025-09-25 10:54:01: error: Authentication failed against database server, the provided database credentials for `root` are not valid.
+
+Please make sure to provide valid database credentials for the database server at the configured address.
+2025-09-25 10:55:15: error: Authentication failed against database server, the provided database credentials for `postgresql` are not valid.
+
+Please make sure to provide valid database credentials for the database server at the configured address.
+2025-09-25 10:55:55: info: Successfully connected to the database
+2025-09-25 10:55:55: info: Server started on PORT 4000
