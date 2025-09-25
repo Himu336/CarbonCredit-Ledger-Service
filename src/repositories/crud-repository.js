@@ -15,9 +15,6 @@ class CrudRepository {
         const record = await this.model.findUnique({
             where: { [field]: id },
         });
-        if (!record) {
-            throw new AppError("Resource not found", StatusCodes.NOT_FOUND);
-        }
         return record;
     }
 
