@@ -13,4 +13,8 @@ router.post("/:id/retire",
     RecordController.retireRecord
 );
 
+router.get("/:id",
+    RecordController.getRecordById
+);
+
 module.exports = router;

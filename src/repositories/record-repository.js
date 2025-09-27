@@ -7,6 +7,15 @@ class RecordRepository extends CrudRepository {
     }
 
     //Add here any specific methods if needed
+    async getRecordWithEvents(recordId) {
+        const record = await prisma.record.findUnique({
+            where: { recordId },
+            include: {
+                events: true
+            }
+        });
+        return record;
+    }
 }
 
 module.exports = RecordRepository;

@@ -104,7 +104,29 @@ async function retireRecord(recordId, retireQuantity) {
     }
 };
 
+async function getRecordById(recordId) {
+    try {
+        const record = await recordRepository.getRecordWithEvents(recordId);
+        if(!record) {
+            throw new AppError(`Record with recordId ${recordId} not found`, StatusCodes.NOT_FOUND);
+        }
+        return record;
+    } catch (error) {
+        if(error instanceof AppError) {
+            throw error;
+        }
+
+        console.error('Error in getRecordById service:', {
+            message: error.message,
+            stack: error.stack,
+            recordId,
+        });
+        throw new AppError('Cannot fetch the record', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+};
+
 module.exports = {
     createRecord,
-    retireRecord
+    retireRecord,
+    getRecordById
 }

@@ -40,8 +40,25 @@ async function retireRecord(req, res) {
     }
 };
 
+async function getRecordById(req, res) {
+    try {
+        const recordId = req.params.id;
+        const record = await RecordService.getRecordById(recordId);
+        SuccessResponse.data = record;
+        return res
+            .status(StatusCodes.OK)
+            .json(SuccessResponse);
+    } catch (error) {
+        ErrorResponse.error = error;
+        return res
+            .status(error.statusCode)
+            .json(ErrorRespons);
+    }
+};
+
 
 module.exports = {
     createRecord,
-    retireRecord
+    retireRecord,
+    getRecordById  
 }
