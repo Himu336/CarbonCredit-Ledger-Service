@@ -23,6 +23,25 @@ async function createRecord(req, res) {
     }
 };
 
+async function retireRecord(req, res) {
+    try {
+        const recordId  = req.params.id;
+        const retireQuantity = req.body.quantity;
+        const updatedRecord = await RecordService.retireRecord(recordId, retireQuantity);
+        SuccessResponse.data = updatedRecord;
+        return res
+            .status(StatusCodes.OK)
+            .json(SuccessResponse);
+    } catch (error) {
+        ErrorResponse.error = error;
+        return res
+            .status(error.statusCode)
+            .json(ErrorResponse);
+    }
+};
+
+
 module.exports = {
-    createRecord
+    createRecord,
+    retireRecord
 }

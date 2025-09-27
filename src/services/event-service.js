@@ -19,7 +19,8 @@ async function createEvent(data) {
             eventId,
             recordId: data.recordId,
             type: data.type,
-            description: data.description || null
+            description: data.description || null,
+            quantity: data.quantity || null
         });
 
         return newEvent;

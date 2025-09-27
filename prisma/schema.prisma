@@ -38,6 +38,7 @@ model Event {
   eventId     String   @unique
   recordId    String
   type        String
+  quantity Int?
   description String?
   createdAt   DateTime @default(now())
 

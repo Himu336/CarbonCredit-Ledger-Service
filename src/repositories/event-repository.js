@@ -7,6 +7,14 @@ class EventRepository extends CrudRepository {
     }
 
     //Add here any specific methods
+    async findByRecordAndType(recordId, type) {
+        return await prisma.event.findMany({
+            where: {
+                recordId,
+                type
+            }
+        });
+    }
 }
 
 module.exports = EventRepository;

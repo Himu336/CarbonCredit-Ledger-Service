@@ -4,8 +4,10 @@ const { StatusCodes } = require('http-status-codes');
 
 const { createEvent } = require('./event-service');
 const { GenerateRecordId } = require('../utils/common');
+const EventRepository = require('../repositories/event-repository');
 
 const recordRepository = new RecordRepository();
+const eventRepository = new EventRepository();
 
 async function createRecord(data) {
     try {
@@ -37,6 +39,7 @@ async function createRecord(data) {
             recordId: newRecord.recordId,
             type: 'CREATED',
             description: 'Record created in the system',
+            quantity: newRecord.quantity
         });
 
         return newRecord;
@@ -58,6 +61,50 @@ async function createRecord(data) {
     }
 };
 
+async function retireRecord(recordId, retireQuantity) {
+    try {
+        // fetch the record 
+        const record = await recordRepository.get(recordId);
+        if (!record) throw new AppError(`Record with recordId ${recordId} not found`, StatusCodes.NOT_FOUND);
+
+        // calculate already retired credits
+        const retiredEvents = await eventRepository.findByRecordAndType(recordId, 'RETIRED');
+        const totalRetired = retiredEvents.reduce((sum, event) => sum + (event.quantity || 0), 0);
+
+        const availableBalance = record.quantity - totalRetired;
+
+        //validate retire quantity
+        if (retireQuantity <= 0) throw new AppError('Retire quantity must be greater than 0', StatusCodes.BAD_REQUEST);
+        if (retireQuantity > availableBalance) throw new AppError('Insufficient balance to retire the requested quantity', StatusCodes.BAD_REQUEST);
+        
+        // create a RETIRED event
+        const retireEvent = await createEvent({
+            recordId: record.recordId,
+            type: 'RETIRED',
+            description: `Retired ${retireQuantity} credits`,
+            quantity: retireQuantity
+        });
+
+        return retireEvent;
+
+    } catch (error) {
+        if (error instanceof AppError) {
+            throw error;
+        }
+
+        // Log unknown errors with context
+        console.error('Error in retireRecord service:', {
+            message: error.message,
+            stack: error.stack,
+            recordId,
+            retireQuantity
+        });
+
+        throw new AppError('Cannot retire credits from the record', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+};
+
 module.exports = {
-    createRecord
+    createRecord,
+    retireRecord
 }

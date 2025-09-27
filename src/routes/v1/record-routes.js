@@ -9,4 +9,8 @@ router.post("/",
     RecordController.createRecord
 );
 
+router.post("/:id/retire",
+    RecordController.retireRecord
+);
+
 module.exports = router;
