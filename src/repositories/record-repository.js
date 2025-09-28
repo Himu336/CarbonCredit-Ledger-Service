@@ -16,6 +16,23 @@ class RecordRepository extends CrudRepository {
         });
         return record;
     }
+
+    // transaction specific methods
+    async getForRetirement(recordId, tx) {
+        return tx.record.findUnique({
+            where: {recordId}
+        });
+    }
+
+    async getRecordWithEventsInTx(recordId, tx) {
+        const record = await tx.record.findUnique({
+            where: { recordId },
+            include: {
+                events: true
+            }
+        });
+        return record;
+    }
 }
 
 module.exports = RecordRepository;

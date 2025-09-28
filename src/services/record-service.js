@@ -1,9 +1,10 @@
 const RecordRepository = require('../repositories/record-repository');
 const AppError = require('../utils/errors/app-error');
 const { StatusCodes } = require('http-status-codes');
+const prisma = require('../config/db-config');
 
 const { createEvent } = require('./event-service');
-const { GenerateRecordId } = require('../utils/common');
+const { GenerateRecordId, GenerateEventId } = require('../utils/common');
 const EventRepository = require('../repositories/event-repository');
 
 const recordRepository = new RecordRepository();
@@ -63,33 +64,51 @@ async function createRecord(data) {
 
 async function retireRecord(recordId, retireQuantity) {
     try {
-        // fetch the record 
-        const record = await recordRepository.get(recordId);
-        if (!record) throw new AppError(`Record with recordId ${recordId} not found`, StatusCodes.NOT_FOUND);
+        //using prisma transaction with specific repository methods 
+        const retireEvent = await prisma.$transaction(async (tx) => {
 
-        // calculate already retired credits
-        const retiredEvents = await eventRepository.findByRecordAndType(recordId, 'RETIRED');
-        const totalRetired = retiredEvents.reduce((sum, event) => sum + (event.quantity || 0), 0);
+            // fetch the record 
+            const record = await recordRepository.getForRetirement(recordId, tx);
+            if (!record) throw new AppError(`Record with recordId ${recordId} not found`, StatusCodes.NOT_FOUND);
 
-        const availableBalance = record.quantity - totalRetired;
+            // calculate already retired credits
+            const retiredEvents = await eventRepository.findRetiredCreditsInTx(recordId, tx);
+            const totalRetired = retiredEvents.reduce((sum, event) => sum + (event.quantity || 0), 0);
 
-        //validate retire quantity
-        if (retireQuantity <= 0) throw new AppError('Retire quantity must be greater than 0', StatusCodes.BAD_REQUEST);
-        if (retireQuantity > availableBalance) throw new AppError('Insufficient balance to retire the requested quantity', StatusCodes.BAD_REQUEST);
-        
-        // create a RETIRED event
-        const retireEvent = await createEvent({
-            recordId: record.recordId,
-            type: 'RETIRED',
-            description: `Retired ${retireQuantity} credits`,
-            quantity: retireQuantity
+            const availableBalance = record.quantity - totalRetired;
+
+            //validate retire quantity
+            if (retireQuantity <= 0) throw new AppError('Retire quantity must be greater than 0', StatusCodes.BAD_REQUEST);
+            if (retireQuantity > availableBalance) throw new AppError('Insufficient balance to retire the requested quantity', StatusCodes.BAD_REQUEST);
+            
+            // create a RETIRED event
+            const retireEvent = await eventRepository.createRetirementEventInTx({
+                eventId: GenerateEventId({
+                    recordId: record.recordId,
+                    type: 'RETIRED'
+                }),
+                recordId: record.recordId,
+                description: `Retired ${retireQuantity} credits`,
+                quantity: retireQuantity
+            }, tx);
+
+            return retireEvent;
+        }, {
+            // transaction options
+            isolationLevel: 'Serializable',
+            timeout: 10000
         });
-
+        
         return retireEvent;
 
     } catch (error) {
         if (error instanceof AppError) {
             throw error;
+        }
+
+        // handing prisma transaction specific errors
+        if( error.code === 'P2034') {
+            throw new AppError('Transaction failed due to concurrent access. Please retry.', StatusCodes.CONFLICT);
         }
 
         // Log unknown errors with context
